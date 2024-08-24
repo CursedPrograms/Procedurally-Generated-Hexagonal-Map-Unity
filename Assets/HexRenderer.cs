@@ -10,6 +10,10 @@ public class HexRenderer : MonoBehaviour
     MeshFilter m_meshFilter;
     MeshRenderer m_meshRenderer;
 
+    public float innerSize;
+    public float outerSize;
+    public float height;
+
     List<Face> m_faces;
 
     public Material material;
@@ -43,7 +47,6 @@ public class HexRenderer : MonoBehaviour
     private void OnEnable()
     {
         DrawMesh();
-
     }
 
     private void OnValidate()
@@ -63,9 +66,9 @@ public class HexRenderer : MonoBehaviour
     void DrawFaces()
     {
         m_faces = new List<Face>();
-        for(int point = 0; point < 6; point++)
+        for (int point = 0; point < 6; point++)
         {
-
+            m_faces.Add(CreateFace(innerSize, outerSize, height / 2f, height / 2f, point));
         }
     }
 
@@ -75,15 +78,15 @@ public class HexRenderer : MonoBehaviour
         List<int> tris = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
 
-        for (int i = 0; i < vertices.Count; i++)
+        for (int i = 0; i < m_faces.Count; i++)
         {
             vertices.AddRange(m_faces[i].vertices);
             uvs.AddRange(m_faces[i].uvs);
 
-            int Offset = (4 * i);
+            int offset = vertices.Count - m_faces[i].vertices.Count;
             foreach (int triangle in m_faces[i].triangles)
             {
-                tris.Add(triangle + Offset);
+                tris.Add(triangle + offset);
             }
         }
 
@@ -95,14 +98,21 @@ public class HexRenderer : MonoBehaviour
 
     private Face CreateFace(float innerRad, float outerRad, float HeightA, float HeightB, int point, bool reverse = false)
     {
-        Vector3 PointA = GetPoint(innerRad, HeightB, point);//
-        return new Face();
+        Vector3 PointA = GetPoint(innerRad, HeightB, point);
+        Vector3 PointB = GetPoint(innerRad, HeightB, (point + 1) % 6);
+        Vector3 PointC = GetPoint(outerRad, HeightA, (point + 1) % 6);
+        Vector3 PointD = GetPoint(outerRad, HeightA, point);
+
+        List<Vector3> vertices = new List<Vector3>() { PointA, PointB, PointC, PointD };
+        List<int> triangles = new List<int>() { 0, 1, 2, 2, 3, 0 };
+        List<Vector2> uvs = new List<Vector2>() { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) };
+        return new Face(vertices, triangles, uvs);
     }
 
     protected Vector3 GetPoint(float size, float height, int index)
     {
         float angleDeg = 60 * index;
         float angleRad = Mathf.PI / 180f * angleDeg;
-        return new Vector3((size*Mathf.Cos(angleRad)),height,size*Mathf.Sin(angleRad));
+        return new Vector3(size * Mathf.Cos(angleRad), height, size * Mathf.Sin(angleRad));
     }
 }
